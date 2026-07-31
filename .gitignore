@@ -1,0 +1,38 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.jks
+*.keystore
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+backend/staticfiles/
+backend/media/
+backend/db.sqlite3
+
+# Node / Expo
+node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/android/
+mobile/ios/
+mobile/.eas/
+*.aab
+*.apk
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+coverage.xml
+htmlcov/

@@ -1,0 +1,30 @@
+{
+  email {$CADDY_EMAIL}
+  admin off
+}
+
+{$APP_DOMAIN} {
+  encode zstd gzip
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy same-origin
+    X-Frame-Options DENY
+    -Server
+  }
+
+  @static path /static/*
+  handle @static {
+    root * /srv
+    file_server
+  }
+
+  @media path /media/*
+  handle @media {
+    root * /srv
+    file_server
+  }
+
+  handle {
+    reverse_proxy backend:8000
+  }
+}

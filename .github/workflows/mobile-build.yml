@@ -1,0 +1,39 @@
+name: Mobile EAS build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS build profile"
+        required: true
+        default: preview
+        type: choice
+        options: [preview, production]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.profile == 'production' && 'production' || 'staging' }}
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.1"
+      - run: npm install --no-audit --no-fund
+      - run: npm install --global eas-cli
+      - name: Build Android artifact
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_SLUG: ${{ vars.APP_SLUG }}
+          ANDROID_PACKAGE: ${{ vars.ANDROID_PACKAGE }}
+          APP_SCHEME: ${{ vars.APP_SCHEME }}
+          EXPO_PUBLIC_API_BASE_URL: ${{ vars.API_BASE_URL }}
+          EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
+        run: eas build --platform android --profile "${{ inputs.profile }}" --non-interactive --no-wait

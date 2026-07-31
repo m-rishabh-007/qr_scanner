@@ -1,0 +1,92 @@
+name: reviewflow
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-reviewflow}
+      POSTGRES_USER: ${POSTGRES_USER:-reviewflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reviewflow} -d ${POSTGRES_DB:-reviewflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ../backend
+    image: ${BACKEND_IMAGE:-reviewflow-backend}:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      RUN_MIGRATIONS: "true"
+      COLLECT_STATIC: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+    volumes:
+      - static_data:/app/staticfiles
+      - media_data:/app/media
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_API_KEY:?LITELLM_API_KEY is required}
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://host.docker.internal:8080/v1}
+      MODEL_API_KEY: ${MODEL_API_KEY:-not-required}
+      MODEL_NAME: ${MODEL_NAME:-local-model}
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    env_file: ../.env
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - static_data:/srv/static:ro
+      - media_data:/srv/media:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    profiles: ["local"]
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  postgres_data:
+  static_data:
+  media_data:
+  caddy_data:
+  caddy_config:

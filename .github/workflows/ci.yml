@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: reviewflow_test
+          POSTGRES_USER: reviewflow
+          POSTGRES_PASSWORD: reviewflow
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U reviewflow -d reviewflow_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DATABASE_URL: postgresql://reviewflow:reviewflow@127.0.0.1:5432/reviewflow_test
+      DJANGO_SECRET_KEY: ci-only-secret
+      DJANGO_ALLOWED_HOSTS: localhost
+      LITELLM_API_KEY: ci-placeholder
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: python -m pip install --upgrade pip && pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py migrate --noinput
+      - run: pytest --cov=apps --cov-report=term-missing --cov-report=xml
+      - name: Production settings check
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          DJANGO_DEBUG: "false"
+          DJANGO_SECRET_KEY: ci-production-like-secret-at-least-50-characters-long
+          DJANGO_ALLOWED_HOSTS: example.test
+          CSRF_TRUSTED_ORIGINS: https://example.test
+          PUBLIC_BASE_URL: https://example.test
+        run: python manage.py check --deploy --fail-level WARNING
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.1"
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: false
+          tags: reviewflow-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,48 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Share your experience — {{ location.name }}</title>
+  <link rel="stylesheet" href="{% static 'public/styles.css' %}">
+</head>
+<body>
+  <main class="shell" id="app">
+    <header class="merchant-header">
+      {% if location.logo_url %}<img src="{{ location.logo_url }}" alt="" class="merchant-logo">{% else %}<div class="brand-mark" aria-hidden="true">R</div>{% endif %}
+      <div><p class="eyebrow">Share your experience</p><h1>{{ location.name }}</h1></div>
+    </header>
+
+    <section id="questionnaire" aria-labelledby="questionnaire-title">
+      <h2 id="questionnaire-title">How was your visit?</h2>
+      <p class="muted">Rate the areas below. Your feedback and chosen review text may be visible to the merchant.</p>
+      <form id="feedback-form" novalidate>
+        <div id="questions"></div>
+        <label for="comment">Anything else you would like to mention? <span class="muted">Optional</span></label>
+        <textarea id="comment" maxlength="1200" rows="4" placeholder="Add details from your real experience"></textarea>
+        <p class="error" id="form-error" role="alert"></p>
+        <button class="primary" id="generate-button" type="submit">Generate review suggestions</button>
+      </form>
+    </section>
+
+    <section id="suggestions" hidden aria-labelledby="suggestions-title">
+      <h2 id="suggestions-title">Choose a suggestion</h2>
+      <p class="muted">Select one, then edit it to match your experience.</p>
+      <div id="draft-cards" class="draft-grid"></div>
+      <label for="final-text">Your final review text</label>
+      <textarea id="final-text" maxlength="1500" rows="7" placeholder="Select a suggestion or write your own"></textarea>
+      <p class="error" id="action-error" role="alert"></p>
+      <button class="primary" id="copy-open-button" disabled>Copy review &amp; open Google</button>
+      <button class="secondary" id="retry-copy-button" hidden>Retry copy</button>
+      <div id="manual-copy" class="notice" hidden>
+        Clipboard access failed. Select the text above, copy it manually, then continue to Google.
+        <p><a id="manual-google-link" rel="noopener">Open Google review page</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script id="bootstrap" type="application/json">{{ bootstrap_json|safe }}</script>
+  <script src="{% static 'public/review-flow.js' %}" defer></script>
+</body>
+</html>

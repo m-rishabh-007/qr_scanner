@@ -1,0 +1,6 @@
+Hello,
+
+Verify your email address for {{ PRODUCT_NAME }} by opening:
+{{ url }}
+
+After verification, a platform administrator must approve the merchant account.

@@ -1,0 +1,47 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Previously tested immutable image tag, for example sha-<40-char commit>"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+      - name: Authenticate server to private registry
+        if: ${{ vars.REGISTRY_AUTH_ENABLED == 'true' }}
+        env:
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PULL_TOKEN }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: printf '%s' "$REGISTRY_PASSWORD" | ssh "$DEPLOY_USER@$DEPLOY_HOST" docker login ghcr.io --username "$REGISTRY_USERNAME" --password-stdin
+      - name: Promote tested image without rebuilding
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          BACKEND_IMAGE: ghcr.io/${{ github.repository }}-backend
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: ops/scripts/deploy-ssh-compose.sh

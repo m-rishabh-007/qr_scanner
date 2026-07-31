@@ -1,0 +1,13 @@
+model_list:
+  - model_name: review-assistant
+    litellm_params:
+      model: openai/os.environ/MODEL_NAME
+      api_base: os.environ/MODEL_BASE_URL
+      api_key: os.environ/MODEL_API_KEY
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  request_timeout: 20
+  num_retries: 0
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
