@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from apps.generation.exceptions import GenerationError
 from apps.generation.service import ReviewGenerationService
 from apps.locations.models import Location
+
 from .models import AnalyticsEvent, FeedbackAnswer, FeedbackSession, GeneratedDraft
 from .serializers import (
     DraftSelectionSerializer,

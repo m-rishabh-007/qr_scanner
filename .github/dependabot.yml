@@ -1,14 +1,30 @@
 version: 2
+
+# Version-update pull requests are intentionally paused while the initial
+# development baseline is being stabilized. Dependabot alerts and security
+# updates can remain enabled in repository settings. Re-enable routine version
+# updates later with grouped, scheduled pull requests after main is green.
 updates:
   - package-ecosystem: pip
     directory: /backend
-    schedule: { interval: weekly }
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+
   - package-ecosystem: npm
     directory: /mobile
-    schedule: { interval: weekly }
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+
   - package-ecosystem: github-actions
     directory: /
-    schedule: { interval: weekly }
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+
   - package-ecosystem: docker
     directory: /backend
-    schedule: { interval: weekly }
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0

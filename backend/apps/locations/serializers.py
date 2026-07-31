@@ -1,7 +1,7 @@
-from django.utils import timezone
 from rest_framework import serializers
 
 from apps.catalog.models import Domain
+
 from .models import Location
 from .validators import validate_google_review_url
 

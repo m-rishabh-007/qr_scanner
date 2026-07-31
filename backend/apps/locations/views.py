@@ -4,11 +4,11 @@ import qrcode
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
-from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.catalog.models import Domain
+
 from .models import Location, qr_token
 from .permissions import IsApprovedMerchant
 from .serializers import DomainOptionSerializer, LocationSerializer

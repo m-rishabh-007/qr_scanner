@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from apps.feedback.models import AnalyticsEvent, FeedbackAnswer, FeedbackSession
 from apps.locations.models import Location
 from apps.locations.permissions import IsApprovedMerchant
+
 from .serializers import MerchantFeedbackListSerializer
 
 

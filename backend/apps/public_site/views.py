@@ -10,7 +10,6 @@ from django.shortcuts import render
 from django.utils.http import urlsafe_base64_decode
 
 from apps.accounts.tokens import read_email_verification_token
-
 from apps.locations.models import Location
 
 

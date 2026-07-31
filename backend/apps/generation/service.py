@@ -2,6 +2,7 @@ from django.conf import settings
 
 from apps.catalog.models import DomainPromptVersion
 from apps.feedback.models import FeedbackSession
+
 from .client import GenerationResult, LiteLLMGenerationClient
 from .exceptions import GenerationError
 

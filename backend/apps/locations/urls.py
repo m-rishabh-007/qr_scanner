@@ -1,6 +1,12 @@
 from django.urls import path
 
-from .views import DomainOptionsView, MerchantLocationView, QrPngView, RotateQrTokenView, VerifyGoogleLinkView
+from .views import (
+    DomainOptionsView,
+    MerchantLocationView,
+    QrPngView,
+    RotateQrTokenView,
+    VerifyGoogleLinkView,
+)
 
 urlpatterns = [
     path("domains/", DomainOptionsView.as_view()),

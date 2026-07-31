@@ -2,7 +2,8 @@ from django.conf import settings
 from rest_framework import serializers
 
 from apps.catalog.models import Question
-from .models import FeedbackAnswer, FeedbackSession, GeneratedDraft
+
+from .models import FeedbackSession, GeneratedDraft
 
 
 class QuestionPublicSerializer(serializers.ModelSerializer):
