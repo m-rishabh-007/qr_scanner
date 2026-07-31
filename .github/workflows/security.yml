@@ -25,7 +25,7 @@ jobs:
       matrix:
         language: [python, javascript-typescript]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
@@ -37,5 +37,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/checkout@v6
+      - name: Dependency review
+        uses: actions/dependency-review-action@v5
+        with:
+          # Temporary, narrowly scoped exception for the Expo/Jest transitive
+          # build-tool dependency. Remove this when the Expo-compatible tree
+          # resolves brace-expansion to 5.0.8 or newer.
+          allow-ghsas: GHSA-mh99-v99m-4gvg
+          show-patched-versions: true
