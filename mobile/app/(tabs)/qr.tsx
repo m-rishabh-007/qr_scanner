@@ -1,6 +1,6 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Alert, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useDomains, useLocation, useSaveLocation } from "@/api/hooks";
@@ -17,18 +17,14 @@ export default function QrScreen() {
   const locationQuery = useLocation();
   const domainsQuery = useDomains();
   const saveLocation = useSaveLocation();
-  const [name, setName] = useState("");
-  const [domainId, setDomainId] = useState<number | null>(null);
-  const [googleUrl, setGoogleUrl] = useState("");
+  const [nameOverride, setNameOverride] = useState<string | null>(null);
+  const [domainIdOverride, setDomainIdOverride] = useState<number | null>(null);
+  const [googleUrlOverride, setGoogleUrlOverride] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (locationQuery.data) {
-      setName(locationQuery.data.name);
-      setDomainId(locationQuery.data.domain.id);
-      setGoogleUrl(locationQuery.data.google_review_url);
-    }
-  }, [locationQuery.data]);
+  const name = nameOverride ?? locationQuery.data?.name ?? "";
+  const domainId = domainIdOverride ?? locationQuery.data?.domain.id ?? null;
+  const googleUrl = googleUrlOverride ?? locationQuery.data?.google_review_url ?? "";
 
   const qrSource = useMemo(() => accessToken ? { uri: `${API_BASE_URL}/api/merchant/location/qr.png`, headers: { Authorization: `Bearer ${accessToken}` } } : undefined, [accessToken]);
 
@@ -97,12 +93,12 @@ export default function QrScreen() {
     <Screen>
       <Card>
         <Text style={styles.heading}>{locationQuery.data ? "Location configuration" : "Create your location"}</Text>
-        <FormField label="Location name" value={name} onChangeText={setName} autoCapitalize="words" />
+        <FormField label="Location name" value={name} onChangeText={setNameOverride} autoCapitalize="words" />
         <Text style={styles.label}>Domain</Text>
         <View style={styles.domains}>
-          {domainsQuery.data?.map((domain) => <Pressable key={domain.id} onPress={() => setDomainId(domain.id)} style={[styles.domain, domainId === domain.id && styles.domainActive]}><Text style={[styles.domainText, domainId === domain.id && styles.domainTextActive]}>{domain.name}</Text></Pressable>)}
+          {domainsQuery.data?.map((domain) => <Pressable key={domain.id} onPress={() => setDomainIdOverride(domain.id)} style={[styles.domain, domainId === domain.id && styles.domainActive]}><Text style={[styles.domainText, domainId === domain.id && styles.domainTextActive]}>{domain.name}</Text></Pressable>)}
         </View>
-        <FormField label="Official Google review-request link" value={googleUrl} onChangeText={setGoogleUrl} keyboardType="url" autoCapitalize="none" />
+        <FormField label="Official Google review-request link" value={googleUrl} onChangeText={setGoogleUrlOverride} keyboardType="url" autoCapitalize="none" />
         <PrimaryButton title={locationQuery.data ? "Save changes" : "Create location"} loading={saveLocation.isPending} disabled={!name.trim() || !domainId || !googleUrl.trim()} onPress={save} />
         {!!locationQuery.data && <PrimaryButton title="Validate Google link format" onPress={verify} />}
         {!!message && <Text style={styles.message}>{message}</Text>}

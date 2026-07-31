@@ -5,6 +5,7 @@ from django.db import models
 from apps.accounts.models import MerchantAccount
 from apps.catalog.models import Domain
 from apps.core.models import TimeStampedModel
+
 from .validators import validate_google_review_url
 
 

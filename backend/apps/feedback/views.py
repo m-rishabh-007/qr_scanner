@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,6 +10,7 @@ from rest_framework.views import APIView
 from apps.generation.exceptions import GenerationError
 from apps.generation.service import ReviewGenerationService
 from apps.locations.models import Location
+
 from .models import AnalyticsEvent, FeedbackAnswer, FeedbackSession, GeneratedDraft
 from .serializers import (
     DraftSelectionSerializer,
@@ -26,6 +29,7 @@ class PublicBaseView(APIView):
 
 
 class QuestionnaireConfigView(PublicBaseView):
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, qr_token):
         location = get_object_or_404(
             Location.objects.select_related("domain"), public_qr_token=qr_token, active=True
@@ -65,6 +69,7 @@ class QuestionnaireConfigView(PublicBaseView):
 
 
 class SessionCreateView(PublicBaseView):
+    @extend_schema(request=OpenApiTypes.OBJECT, responses={201: OpenApiTypes.OBJECT})
     def post(self, request, qr_token):
         location = get_object_or_404(Location, public_qr_token=qr_token, active=True)
         language = request.data.get("language") or location.default_language
@@ -77,6 +82,7 @@ class SessionCreateView(PublicBaseView):
 
 
 class FeedbackSubmitView(PublicBaseView):
+    @extend_schema(request=FeedbackSubmitSerializer, responses=OpenApiTypes.OBJECT)
     @transaction.atomic
     def post(self, request, session_token):
         session = get_object_or_404(
@@ -128,6 +134,7 @@ class FeedbackSubmitView(PublicBaseView):
 class GenerateDraftsView(PublicBaseView):
     throttle_classes = [GenerationThrottle]
 
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
     def post(self, request, session_token):
         from django.conf import settings
 
@@ -194,6 +201,7 @@ class GenerateDraftsView(PublicBaseView):
 
 
 class DraftSelectionView(PublicBaseView):
+    @extend_schema(request=DraftSelectionSerializer, responses=OpenApiTypes.OBJECT)
     @transaction.atomic
     def post(self, request, session_token):
         session = get_object_or_404(
@@ -214,6 +222,7 @@ class DraftSelectionView(PublicBaseView):
 
 
 class PublicEventView(PublicBaseView):
+    @extend_schema(request=PublicEventSerializer, responses={204: None})
     @transaction.atomic
     def post(self, request, session_token):
         session = get_object_or_404(

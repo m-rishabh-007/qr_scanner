@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, useWindowDimensions } from "react-native";
 import Svg, { Circle, Line, Polyline, Rect, Text as SvgText } from "react-native-svg";
 
 export function TrendChart({ data }: { data: { day: string; average: number }[] }) {

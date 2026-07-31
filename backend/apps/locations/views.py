@@ -4,11 +4,13 @@ import qrcode
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
-from rest_framework import permissions
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.catalog.models import Domain
+
 from .models import Location, qr_token
 from .permissions import IsApprovedMerchant
 from .serializers import DomainOptionSerializer, LocationSerializer
@@ -18,6 +20,7 @@ from .validators import validate_google_review_url
 class DomainOptionsView(APIView):
     permission_classes = [IsApprovedMerchant]
 
+    @extend_schema(responses=DomainOptionSerializer(many=True))
     def get(self, request):
         return Response(DomainOptionSerializer(Domain.objects.filter(active=True), many=True).data)
 
@@ -28,12 +31,14 @@ class MerchantLocationView(APIView):
     def get_object(self, request):
         return Location.objects.filter(merchant_account=request.user.merchant_account).first()
 
+    @extend_schema(responses=LocationSerializer)
     def get(self, request):
         location = self.get_object(request)
         if not location:
             return Response(None)
         return Response(LocationSerializer(location, context={"request": request}).data)
 
+    @extend_schema(request=LocationSerializer, responses={201: LocationSerializer})
     def post(self, request):
         if self.get_object(request):
             return Response({"detail": "MVP allows one location per merchant."}, status=409)
@@ -42,6 +47,7 @@ class MerchantLocationView(APIView):
         location = serializer.save(merchant_account=request.user.merchant_account)
         return Response(LocationSerializer(location, context={"request": request}).data, status=201)
 
+    @extend_schema(request=LocationSerializer, responses=LocationSerializer)
     def patch(self, request):
         location = self.get_object(request)
         if not location:
@@ -57,6 +63,7 @@ class MerchantLocationView(APIView):
 class VerifyGoogleLinkView(APIView):
     permission_classes = [IsApprovedMerchant]
 
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         location = Location.objects.filter(merchant_account=request.user.merchant_account).first()
         if not location:
@@ -70,6 +77,7 @@ class VerifyGoogleLinkView(APIView):
 class QrPngView(APIView):
     permission_classes = [IsApprovedMerchant]
 
+    @extend_schema(responses=OpenApiTypes.BINARY)
     def get(self, request):
         location = Location.objects.filter(merchant_account=request.user.merchant_account).first()
         if not location:
@@ -86,6 +94,7 @@ class QrPngView(APIView):
 class RotateQrTokenView(APIView):
     permission_classes = [IsApprovedMerchant]
 
+    @extend_schema(request=OpenApiTypes.OBJECT, responses=LocationSerializer)
     def post(self, request):
         if request.data.get("confirmation") != "ROTATE":
             return Response({"detail": "Type ROTATE to confirm. Printed QR codes will stop working."}, status=400)

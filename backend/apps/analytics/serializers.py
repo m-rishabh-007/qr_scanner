@@ -1,6 +1,13 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.feedback.models import FeedbackSession
+
+
+class FeedbackAnswerSummarySerializer(serializers.Serializer):
+    aspect_id = serializers.CharField()
+    label = serializers.CharField()
+    rating = serializers.IntegerField()
 
 
 class MerchantFeedbackListSerializer(serializers.ModelSerializer):
@@ -25,7 +32,8 @@ class MerchantFeedbackListSerializer(serializers.ModelSerializer):
             "language",
         ]
 
-    def get_answers(self, obj):
+    @extend_schema_field(FeedbackAnswerSummarySerializer(many=True))
+    def get_answers(self, obj) -> list[dict[str, str | int]]:
         return [
             {
                 "aspect_id": answer.question.aspect_id,
@@ -35,10 +43,10 @@ class MerchantFeedbackListSerializer(serializers.ModelSerializer):
             for answer in obj.answers.all()
         ]
 
-    def get_google_opened(self, obj):
+    def get_google_opened(self, obj) -> bool:
         return bool(obj.google_opened_at)
 
-    def get_classification(self, obj):
+    def get_classification(self, obj) -> str:
         if obj.overall_rating is None:
             return "unrated"
         if obj.overall_rating >= 4:

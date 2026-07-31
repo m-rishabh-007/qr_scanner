@@ -2,9 +2,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,6 +29,7 @@ class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
+    @extend_schema(request=RegistrationSerializer, responses={201: OpenApiTypes.OBJECT})
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -43,6 +45,7 @@ class VerifyEmailView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
+    @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         token = request.data.get("token", "")
         try:
@@ -61,6 +64,7 @@ class LoginView(TokenObtainPairView):
 
 
 class LogoutView(APIView):
+    @extend_schema(request=OpenApiTypes.OBJECT, responses={204: None})
     def post(self, request):
         token = request.data.get("refresh")
         if token:
@@ -72,6 +76,7 @@ class PasswordResetRequestView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
+    @extend_schema(request=PasswordResetRequestSerializer, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -93,6 +98,7 @@ class PasswordResetConfirmView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
+    @extend_schema(request=PasswordResetConfirmSerializer, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -109,6 +115,7 @@ class PasswordResetConfirmView(APIView):
 
 
 class DeleteAccountView(APIView):
+    @extend_schema(request=OpenApiTypes.OBJECT, responses={204: None})
     def post(self, request):
         password = request.data.get("password", "")
         if not request.user.check_password(password):

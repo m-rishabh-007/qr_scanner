@@ -1,7 +1,8 @@
-from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.catalog.models import Domain
+
 from .models import Location
 from .validators import validate_google_review_url
 
@@ -38,12 +39,14 @@ class LocationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "public_qr_token", "google_link_verified_at"]
 
-    def get_public_url(self, obj):
+    @extend_schema_field(str)
+    def get_public_url(self, obj) -> str:
         request = self.context.get("request")
         path = f"/r/{obj.public_qr_token}/"
         return request.build_absolute_uri(path) if request else path
 
-    def get_qr_png_url(self, obj):
+    @extend_schema_field(str)
+    def get_qr_png_url(self, obj) -> str:
         request = self.context.get("request")
         path = "/api/merchant/location/qr.png"
         return request.build_absolute_uri(path) if request else path
