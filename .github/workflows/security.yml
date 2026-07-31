@@ -44,5 +44,5 @@ jobs:
           # Temporary, narrowly scoped exception for the Expo/Jest transitive
           # build-tool dependency. Remove this when the Expo-compatible tree
           # resolves brace-expansion to 5.0.8 or newer.
-          allow-ghsas: GHSA-mh99-v99m-4gvg
+          allow-ghsas: GHSA-mh99-v99m-4gvg, GHSA-w5hq-g745-h8pq
           show-patched-versions: true
