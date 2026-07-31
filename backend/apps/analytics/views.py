@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.db.models import Avg, Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,6 +32,7 @@ class MerchantLocationMixin:
 
 
 class OverviewView(MerchantLocationMixin, APIView):
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         location = self.get_location()
         if not location:
