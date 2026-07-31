@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, View, type ViewProps } from "react-native";
+import { ScrollView, StyleSheet, type ViewProps } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export function Screen({ children, style, ...props }: ViewProps) {

@@ -15,12 +15,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: process.env.APP_ICON_PATH ?? "./assets/icon.png",
     scheme,
     userInterfaceStyle: "light",
-    newArchEnabled: true,
-    splash: {
-      image: process.env.APP_SPLASH_PATH ?? "./assets/splash.png",
-      resizeMode: "contain",
-      backgroundColor: "#F4F7FB"
-    },
     android: {
       package: androidPackage,
       versionCode: 1,
@@ -30,7 +24,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       permissions: []
     },
-    plugins: ["expo-router", "expo-secure-store"],
+    plugins: [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          image: process.env.APP_SPLASH_PATH ?? "./assets/splash.png",
+          resizeMode: "contain",
+          backgroundColor: "#F4F7FB"
+        }
+      ]
+    ],
     experiments: { typedRoutes: true },
     extra: {
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://10.0.2.2:8000",
