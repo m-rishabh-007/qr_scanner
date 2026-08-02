@@ -20,30 +20,71 @@ Important: the Android package/application ID can be configured before the first
 
 ```bash
 cp .env.example .env
-docker compose -f ops/compose.yml --profile local up --build
+
+docker compose \
+  --env-file .env \
+  -f ops/compose.yml \
+  -f ops/compose.local.yml \
+  --profile local \
+  config --quiet
+
+docker compose \
+  --env-file .env \
+  -f ops/compose.yml \
+  -f ops/compose.local.yml \
+  --profile local \
+  up --build -d
 ```
 
 Then:
 
-- Public site through Caddy: `http://localhost`
+- Public site through Caddy: `http://localhost:8080`
 - Direct backend development port: `http://localhost:8000`
-- Django Admin: `http://localhost/admin/`
-- API schema: `http://localhost/api/schema/`
+- Django Admin through Caddy: `http://localhost:8080/admin/`
+- API schema through Caddy: `http://localhost:8080/api/schema/`
 - Mailpit: `http://localhost:8025`
 
 Create a superuser and seed configurable domains:
 
 ```bash
-docker compose -f ops/compose.yml exec backend python manage.py createsuperuser
-docker compose -f ops/compose.yml exec backend python manage.py seed_initial_catalog
+docker compose \
+  --env-file .env \
+  -f ops/compose.yml \
+  -f ops/compose.local.yml \
+  --profile local \
+  exec backend python manage.py createsuperuser
+
+docker compose \
+  --env-file .env \
+  -f ops/compose.yml \
+  -f ops/compose.local.yml \
+  --profile local \
+  exec backend python manage.py seed_initial_catalog
+```
+
+Inspect service state and raw logs before changing code:
+
+```bash
+docker compose \
+  --env-file .env \
+  -f ops/compose.yml \
+  -f ops/compose.local.yml \
+  --profile local \
+  ps
+
+docker compose \
+  --env-file .env \
+  -f ops/compose.yml \
+  -f ops/compose.local.yml \
+  --profile local \
+  logs --no-color backend db litellm caddy mailpit
 ```
 
 Mobile app:
 
 ```bash
 cd mobile
-npm install
-npx expo install --fix
+npm ci --no-audit --no-fund
 npm run start
 ```
 

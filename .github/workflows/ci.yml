@@ -77,6 +77,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate Compose configurations
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env -f ops/compose.yml config --quiet
+          docker compose \
+            --env-file .env \
+            -f ops/compose.yml \
+            -f ops/compose.local.yml \
+            --profile local \
+            config --quiet
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
