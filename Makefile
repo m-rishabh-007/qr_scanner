@@ -1,24 +1,35 @@
-.PHONY: up down logs test lint migrate seed mobile-install
+COMPOSE_LOCAL = docker compose --env-file .env -f ops/compose.yml -f ops/compose.local.yml --profile local
+
+.PHONY: compose-config up down logs test lint migrate seed mobile-install
+
+compose-config:
+	$(COMPOSE_LOCAL) config --quiet
+
 up:
-	docker compose -f ops/compose.yml up --build
+	$(COMPOSE_LOCAL) up --build
 
 down:
-	docker compose -f ops/compose.yml down
+	$(COMPOSE_LOCAL) down
 
 logs:
-	docker compose -f ops/compose.yml logs -f backend
+	$(COMPOSE_LOCAL) logs -f backend db litellm caddy mailpit
 
 test:
-	docker compose -f ops/compose.yml run --rm backend pytest
+	$(COMPOSE_LOCAL) run --rm --no-deps \
+		-e RUN_MIGRATIONS=false \
+		-e DJANGO_SETTINGS_MODULE=config.settings.test \
+		backend pytest
 
 lint:
-	docker compose -f ops/compose.yml run --rm backend ruff check .
+	$(COMPOSE_LOCAL) run --rm --no-deps \
+		-e RUN_MIGRATIONS=false \
+		backend ruff check .
 
 migrate:
-	docker compose -f ops/compose.yml exec backend python manage.py migrate
+	$(COMPOSE_LOCAL) exec backend python manage.py migrate
 
 seed:
-	docker compose -f ops/compose.yml exec backend python manage.py seed_initial_catalog
+	$(COMPOSE_LOCAL) exec backend python manage.py seed_initial_catalog
 
 mobile-install:
-	cd mobile && npm install && npx expo install --fix
+	cd mobile && npm ci --no-audit --no-fund

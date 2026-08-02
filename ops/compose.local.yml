@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      args:
+        INSTALL_DEV_DEPS: "true"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      COLLECT_STATIC: "false"
+      EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: "1025"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
+      EMAIL_USE_TLS: "false"
+    depends_on:
+      mailpit:
+        condition: service_started
+
+  caddy:
+    environment:
+      APP_DOMAIN: http://localhost
+    ports: !override
+      - "127.0.0.1:8080:80"
