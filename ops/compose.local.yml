@@ -5,7 +5,7 @@ services:
         INSTALL_DEV_DEPS: "true"
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.local
-      COLLECT_STATIC: "false"
+      COLLECT_STATIC: "true"
       EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
       EMAIL_HOST: mailpit
       EMAIL_PORT: "1025"
