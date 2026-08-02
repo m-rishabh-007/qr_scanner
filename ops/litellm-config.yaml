@@ -1,7 +1,7 @@
 model_list:
   - model_name: review-assistant
     litellm_params:
-      model: openai/os.environ/MODEL_NAME
+      model: os.environ/MODEL_NAME
       api_base: os.environ/MODEL_BASE_URL
       api_key: os.environ/MODEL_API_KEY
 litellm_settings:
