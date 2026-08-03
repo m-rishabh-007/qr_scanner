@@ -1,10 +1,10 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useMemo, useState } from "react";
-import { Alert, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useDomains, useLocation, useSaveLocation } from "@/api/hooks";
 import { authenticatedRequest } from "@/api/client";
+import { useDomains, useLocation, useSaveLocation } from "@/api/hooks";
 import { Card } from "@/components/Card";
 import { FormField } from "@/components/FormField";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -22,18 +22,42 @@ export default function QrScreen() {
   const [googleUrlOverride, setGoogleUrlOverride] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  const name = nameOverride ?? locationQuery.data?.name ?? "";
-  const domainId = domainIdOverride ?? locationQuery.data?.domain.id ?? null;
-  const googleUrl = googleUrlOverride ?? locationQuery.data?.google_review_url ?? "";
-
   const qrSource = useMemo(() => accessToken ? { uri: `${API_BASE_URL}/api/merchant/location/qr.png`, headers: { Authorization: `Bearer ${accessToken}` } } : undefined, [accessToken]);
+
+  if (locationQuery.isPending) {
+    return (
+      <Screen>
+        <Card style={styles.centeredCard}>
+          <ActivityIndicator />
+          <Text style={styles.message}>Loading location...</Text>
+        </Card>
+      </Screen>
+    );
+  }
+
+  if (locationQuery.isError) {
+    return (
+      <Screen>
+        <Card>
+          <Text style={styles.heading}>Unable to load location</Text>
+          <Text style={styles.message}>{locationQuery.error.message}</Text>
+          <PrimaryButton title="Retry" onPress={() => void locationQuery.refetch()} />
+        </Card>
+      </Screen>
+    );
+  }
+
+  const location = locationQuery.data ?? null;
+  const name = nameOverride ?? location?.name ?? "";
+  const domainId = domainIdOverride ?? location?.domain?.id ?? null;
+  const googleUrl = googleUrlOverride ?? location?.google_review_url ?? "";
 
   const save = async () => {
     if (!domainId) return;
     setMessage("");
     try {
       await saveLocation.mutateAsync({
-        exists: !!locationQuery.data,
+        exists: !!location,
         location: { name, domain_id: domainId, google_review_url: googleUrl, default_language: "en" }
       });
       setMessage("Location saved. Test the Google link before printing the QR.");
@@ -52,7 +76,6 @@ export default function QrScreen() {
       setMessage((error as Error).message);
     }
   };
-
 
   const rotateQr = () => {
     Alert.alert(
@@ -92,26 +115,28 @@ export default function QrScreen() {
   return (
     <Screen>
       <Card>
-        <Text style={styles.heading}>{locationQuery.data ? "Location configuration" : "Create your location"}</Text>
+        <Text style={styles.heading}>{location ? "Location configuration" : "Create your location"}</Text>
         <FormField label="Location name" value={name} onChangeText={setNameOverride} autoCapitalize="words" />
         <Text style={styles.label}>Domain</Text>
+        {domainsQuery.isPending && <Text style={styles.message}>Loading domains...</Text>}
+        {domainsQuery.isError && <Text style={styles.errorText}>{domainsQuery.error.message}</Text>}
         <View style={styles.domains}>
           {domainsQuery.data?.map((domain) => <Pressable key={domain.id} onPress={() => setDomainIdOverride(domain.id)} style={[styles.domain, domainId === domain.id && styles.domainActive]}><Text style={[styles.domainText, domainId === domain.id && styles.domainTextActive]}>{domain.name}</Text></Pressable>)}
         </View>
         <FormField label="Official Google review-request link" value={googleUrl} onChangeText={setGoogleUrlOverride} keyboardType="url" autoCapitalize="none" />
-        <PrimaryButton title={locationQuery.data ? "Save changes" : "Create location"} loading={saveLocation.isPending} disabled={!name.trim() || !domainId || !googleUrl.trim()} onPress={save} />
-        {!!locationQuery.data && <PrimaryButton title="Validate Google link format" onPress={verify} />}
+        <PrimaryButton title={location ? "Save changes" : "Create location"} loading={saveLocation.isPending} disabled={!name.trim() || !domainId || !googleUrl.trim() || domainsQuery.isError} onPress={save} />
+        {!!location && <PrimaryButton title="Validate Google link format" onPress={verify} />}
         {!!message && <Text style={styles.message}>{message}</Text>}
       </Card>
 
-      {!!locationQuery.data && (
+      {!!location && (
         <Card style={styles.qrCard}>
           <Text style={styles.heading}>Stable location QR</Text>
           {!!qrSource && <Image source={qrSource} style={styles.qr} resizeMode="contain" />}
-          <Text style={styles.url}>{locationQuery.data.public_url}</Text>
+          <Text style={styles.url}>{location.public_url}</Text>
           <PrimaryButton title="Share / download QR" onPress={shareQr} />
-          <PrimaryButton title="Preview customer flow" onPress={() => Linking.openURL(locationQuery.data!.public_url)} />
-          <PrimaryButton title="Test Google review link" onPress={() => Linking.openURL(locationQuery.data!.google_review_url)} />
+          <PrimaryButton title="Preview customer flow" onPress={() => Linking.openURL(location.public_url)} />
+          <PrimaryButton title="Test Google review link" onPress={() => Linking.openURL(location.google_review_url)} />
           <Text style={styles.note}>Changing questions, branding or the Google link does not change this QR token.</Text>
           <Pressable onPress={rotateQr}><Text style={styles.dangerLink}>Advanced: rotate compromised QR token</Text></Pressable>
         </Card>
@@ -123,12 +148,14 @@ export default function QrScreen() {
 const styles = StyleSheet.create({
   heading: { fontSize: 18, fontWeight: "900", color: "#172033" },
   label: { fontWeight: "700", color: "#172033" },
+  centeredCard: { alignItems: "center" },
   domains: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   domain: { borderRadius: 999, backgroundColor: "#EAECF0", paddingVertical: 8, paddingHorizontal: 12 },
   domainActive: { backgroundColor: "#2457D6" },
   domainText: { color: "#475467" },
   domainTextActive: { color: "#FFFFFF" },
   message: { color: "#475467" },
+  errorText: { color: "#B42318" },
   qrCard: { alignItems: "center" },
   qr: { width: 250, height: 250 },
   url: { color: "#667085", fontSize: 12, textAlign: "center" },

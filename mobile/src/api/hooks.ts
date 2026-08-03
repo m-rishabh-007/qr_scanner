@@ -5,38 +5,63 @@ import { useAuth } from "@/store/auth";
 import type { DomainOption, FeedbackItem, Location, Overview } from "@/types/api";
 
 function useAuthedFetcher() {
-  const { accessToken, refresh } = useAuth();
-  if (!accessToken) throw new Error("Authentication required");
-  return <T,>(path: string, init?: RequestInit) => authenticatedRequest<T>(path, accessToken, refresh, init);
+  const { ready, accessToken, isSigningOut, refresh } = useAuth();
+  const enabled = ready && !!accessToken && !isSigningOut;
+
+  const fetcher = <T,>(path: string, init?: RequestInit) => {
+    if (!accessToken || isSigningOut) return Promise.reject(new Error("Authentication required"));
+    return authenticatedRequest<T>(path, accessToken, refresh, init);
+  };
+
+  return { enabled, fetcher };
 }
 
 export function useOverview(period: number) {
-  const fetcher = useAuthedFetcher();
-  return useQuery({ queryKey: ["overview", period], queryFn: () => fetcher<Overview>(`/api/merchant/analytics/overview/?period=${period}`) });
+  const { enabled, fetcher } = useAuthedFetcher();
+  return useQuery({
+    queryKey: ["overview", period],
+    queryFn: ({ signal }) => fetcher<Overview>(`/api/merchant/analytics/overview/?period=${period}`, { signal }),
+    enabled
+  });
 }
 
 export function useFeedback(period: number, classification = "") {
-  const fetcher = useAuthedFetcher();
+  const { enabled, fetcher } = useAuthedFetcher();
   const suffix = classification ? `&classification=${classification}` : "";
-  return useQuery({ queryKey: ["feedback", period, classification], queryFn: () => fetcher<{ results?: FeedbackItem[] } | FeedbackItem[]>(`/api/merchant/analytics/feedback/?period=${period}${suffix}`).then((data) => Array.isArray(data) ? data : data.results ?? []) });
+  return useQuery({
+    queryKey: ["feedback", period, classification],
+    queryFn: ({ signal }) => fetcher<{ results?: FeedbackItem[] } | FeedbackItem[]>(
+      `/api/merchant/analytics/feedback/?period=${period}${suffix}`,
+      { signal }
+    ).then((data) => Array.isArray(data) ? data : data.results ?? []),
+    enabled
+  });
 }
 
 export function useLocation() {
-  const fetcher = useAuthedFetcher();
-  return useQuery({ queryKey: ["location"], queryFn: () => fetcher<Location | null>("/api/merchant/location/") });
+  const { enabled, fetcher } = useAuthedFetcher();
+  return useQuery({
+    queryKey: ["location"],
+    queryFn: ({ signal }) => fetcher<Location | null>("/api/merchant/location/", { signal }),
+    enabled
+  });
 }
 
 export function useDomains() {
-  const fetcher = useAuthedFetcher();
-  return useQuery({ queryKey: ["domains"], queryFn: () => fetcher<DomainOption[]>("/api/merchant/domains/") });
+  const { enabled, fetcher } = useAuthedFetcher();
+  return useQuery({
+    queryKey: ["domains"],
+    queryFn: ({ signal }) => fetcher<DomainOption[]>("/api/merchant/domains/", { signal }),
+    enabled
+  });
 }
 
 export function useSaveLocation() {
-  const fetcher = useAuthedFetcher();
+  const { fetcher } = useAuthedFetcher();
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ location, exists }: { location: Partial<Location> & { domain_id: number }; exists: boolean }) => fetcher<Location>("/api/merchant/location/", { method: exists ? "PATCH" : "POST", body: JSON.stringify(location) }),
-    onSuccess: (value) => client.setQueryData(["location"], value)
+    onSuccess: () => client.invalidateQueries({ queryKey: ["location"] })
   });
 }
 
