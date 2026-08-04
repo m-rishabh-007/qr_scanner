@@ -5,7 +5,7 @@ import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "@/store/auth";
 
 export default function Index() {
-  const { ready, accessToken } = useAuth();
+  const { ready, accessToken, isSigningOut } = useAuth();
   if (!ready) return <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator /></View>;
-  return <Redirect href={accessToken ? "/(tabs)" : "/(auth)/login"} />;
+  return <Redirect href={accessToken && !isSigningOut ? "/(tabs)" : "/(auth)/login"} />;
 }

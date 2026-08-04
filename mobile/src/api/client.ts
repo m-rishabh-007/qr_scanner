@@ -1,3 +1,4 @@
+import { readJsonPayload } from "@/api/response";
 import { API_BASE_URL } from "@/lib/config";
 
 export async function rawRequest<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
@@ -5,9 +6,9 @@ export async function rawRequest<T = unknown>(path: string, init: RequestInit = 
     ...init,
     headers: { "Content-Type": "application/json", ...(init.headers ?? {}) }
   });
-  const payload = response.status === 204 ? null : await response.json().catch(() => ({}));
+  const payload = await readJsonPayload(response);
   if (!response.ok) {
-    const message = (payload as { detail?: string })?.detail ?? `Request failed (${response.status})`;
+    const message = (payload as { detail?: string } | null)?.detail ?? `Request failed (${response.status})`;
     throw Object.assign(new Error(message), { status: response.status, payload });
   }
   return payload as T;

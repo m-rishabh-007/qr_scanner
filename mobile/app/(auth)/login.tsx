@@ -21,8 +21,8 @@ export default function LoginScreen() {
   const submit = handleSubmit(async (values) => {
     setServerError("");
     try {
-      await signIn(values.email.trim().toLowerCase(), values.password);
-      router.replace("/(tabs)");
+      const signedIn = await signIn(values.email.trim().toLowerCase(), values.password);
+      if (signedIn) router.replace("/(tabs)");
     } catch (error) {
       setServerError((error as Error).message);
     }
