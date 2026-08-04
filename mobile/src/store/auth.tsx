@@ -12,7 +12,7 @@ type AuthContextValue = {
   ready: boolean;
   accessToken: string | null;
   isSigningOut: boolean;
-  signIn(email: string, password: string): Promise<void>;
+  signIn(email: string, password: string): Promise<boolean>;
   signOut(): Promise<void>;
   refresh(): Promise<string | null>;
 };
@@ -70,15 +70,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    if (signingOutRef.current) return false;
+    sessionGenerationRef.current += 1;
+    const generation = sessionGenerationRef.current;
+
     const result = await rawRequest<LoginResponse>("/api/auth/login/", {
       method: "POST",
       body: JSON.stringify({ email, password })
     });
-    sessionGenerationRef.current += 1;
-    const generation = sessionGenerationRef.current;
+
+    if (generation !== sessionGenerationRef.current || signingOutRef.current) return false;
     await queryClient.cancelQueries({}, { silent: true });
+    if (generation !== sessionGenerationRef.current || signingOutRef.current) return false;
+
     queryClient.clear();
-    await persist(result, generation);
+    return persist(result, generation);
   }, [persist, queryClient]);
 
   const signOut = useCallback(async () => {
